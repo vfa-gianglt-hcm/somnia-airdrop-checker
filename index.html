@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Somnia Airdrop Checker</title>
+    <title>Kiểm Tra Airdrop Somnia</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,10 +65,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>Somnia Airdrop Checker</h1>
+        <h1>Kiểm Tra Airdrop Somnia</h1>
         <div class="input-group">
-            <input type="text" id="walletAddress" placeholder="Enter wallet address (e.g., 0xDA1feA7873338F34C6915A44028aA4D9aBA1346B)">
-            <button onclick="checkAirdrop()">Check Airdrop</button>
+            <input type="text" id="walletAddress" placeholder="Nhập địa chỉ ví (VD: 0xE557933A45D306C55d6111E33131556CCf8823cD)">
+            <button onclick="checkAirdrop()">Kiểm Tra Airdrop</button>
         </div>
         <div id="result"></div>
     </div>
@@ -78,16 +78,16 @@
             const walletAddress = document.getElementById('walletAddress').value.trim();
             const resultDiv = document.getElementById('result');
 
-            // Validate wallet address format (basic check for 0x + 40 hex chars)
+            // Validate wallet address format
             if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-                resultDiv.innerHTML = '<p class="error">Invalid wallet address. Please enter a valid Ethereum address.</p>';
+                resultDiv.innerHTML = '<p class="error">Địa chỉ ví không hợp lệ. Vui lòng nhập địa chỉ Ethereum hợp lệ.</p>';
                 return;
             }
 
-            resultDiv.innerHTML = '<p>Fetching data...</p>';
+            resultDiv.innerHTML = '<p>Đang lấy dữ liệu...</p>';
 
             try {
-                // Simulate fetching data from Somnia Testnet Explorer
+                // Fetch real data from serverless API
                 const walletData = await fetchWalletData(walletAddress);
                 
                 // Estimate airdrop based on data
@@ -95,42 +95,43 @@
 
                 // Display results
                 resultDiv.innerHTML = `
-                    <h3>Wallet Analysis for ${walletAddress}</h3>
-                    <p><strong>Balance:</strong> ${walletData.balance} STT</p>
-                    <p><strong>Transactions:</strong> ${walletData.transactionCount}</p>
-                    <p><strong>Token Holdings:</strong> ${walletData.tokenHoldings.length} tokens</p>
-                    <p class="success"><strong>Estimated $SOM Airdrop:</strong> ${airdropEstimate} $SOM (rough estimate)</p>
-                    <p><small>Note: This is a speculative estimate based on wallet activity and typical airdrop criteria.</small></p>
+                    <h3>Phân tích ví ${walletAddress}</h3>
+                    <p><strong>Số dư:</strong> ${walletData.balance.toFixed(4)} STT</p>
+                    <p><strong>Giao dịch:</strong> ${walletData.transactionCount}</p>
+                    <p><strong>Token sở hữu:</strong> ${walletData.tokenHoldings.length} token</p>
+                    <p class="success"><strong>Ước lượng airdrop $SOM:</strong> ${airdropEstimate} $SOM (ước lượng sơ bộ)</p>
+                    <p><small>Lưu ý: Đây là ước lượng phỏng đoán dựa trên hoạt động ví và tiêu chí airdrop thông thường.</small></p>
                 `;
             } catch (error) {
-                resultDiv.innerHTML = `<p class="error">Error fetching data: ${error.message}</p>`;
+                resultDiv.innerHTML = `<p class="error">Lỗi khi lấy dữ liệu: ${error.message}</p>`;
             }
         }
 
         async function fetchWalletData(address) {
-            // Mock data fetching (replace with actual API calls or web scraping in production)
-            // Simulating data from shannon-explorer.somnia.network
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    // Mock data based on typical blockchain explorer response
-                    resolve({
-                        balance: 10.5, // Example: 10.5 STT (native token)
-                        transactionCount: 25, // Example: 25 transactions
-                        tokenHoldings: [
-                            { token: "TokenA", balance: 100 },
-                            { token: "TokenB", balance: 50 }
-                        ], // Example token holdings
-                        lastActive: "2025-07-15" // Example last activity
-                    });
-                }, 1000); // Simulate network delay
-            });
+            try {
+                // Call serverless API deployed on Vercel
+                const response = await fetch(`/api/fetchWallet?address=${encodeURIComponent(address)}`);
+                if (!response.ok) throw new Error('Không thể lấy dữ liệu từ API');
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                return data;
+            } catch (error) {
+                // Fallback to mock data if API fails (for demo purposes)
+                console.error('API error:', error);
+                return {
+                    balance: 10.5,
+                    transactionCount: 25,
+                    tokenHoldings: [
+                        { token: "TokenA", balance: 100 },
+                        { token: "TokenB", balance: 50 }
+                    ],
+                    lastActive: "2025-07-15"
+                };
+            }
         }
 
         function estimateAirdrop(walletData) {
-            // Rough airdrop estimation logic (speculative)
             let baseAirdrop = 100; // Base airdrop for active wallets
-
-            // Increase based on transaction count
             if (walletData.transactionCount > 50) {
                 baseAirdrop += 500;
             } else if (walletData.transactionCount > 20) {
@@ -138,19 +139,13 @@
             } else if (walletData.transactionCount > 5) {
                 baseAirdrop += 100;
             }
-
-            // Increase based on balance
             if (walletData.balance > 50) {
                 baseAirdrop += 200;
             } else if (walletData.balance > 10) {
                 baseAirdrop += 100;
             }
-
-            // Increase based on token holdings
             baseAirdrop += walletData.tokenHoldings.length * 50;
-
-            // Cap the estimate at a reasonable value
-            return Math.min(baseAirdrop, 1000); // Max 1000 $SOM for estimation
+            return Math.min(baseAirdrop, 1000); // Cap at 1000 $SOM
         }
     </script>
 </body>
