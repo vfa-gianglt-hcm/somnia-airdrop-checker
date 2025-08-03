@@ -63,6 +63,16 @@ module.exports = async (req, res) => {
             };
         }).filter(token => token.balance > 0);
 
+        // Fetch coin balance history
+        const historyResponse = await axios.get(`${baseUrl}/addresses/${address}/coin-balance-history`);
+        const historyData = historyResponse.data;
+        let historyBonus = 0;
+        if (historyData.next_page_params && historyData.next_page_params.items_count > 20) {
+            historyBonus = 200; // Nếu items_count > 20, cộng 200 $SOM
+        } else if (historyData.next_page_params && historyData.next_page_params.items_count > 10) {
+            historyBonus = 100; // Nếu items_count > 10, cộng 100 $SOM
+        }
+
         // In ra giá trị đầu vào để debug
         console.log('Debug values:', {
             rawBalance,
@@ -71,33 +81,38 @@ module.exports = async (req, res) => {
             tokenTransfersCount,
             rawGasUsageCount,
             gasUsageCount,
-            nftCount
+            nftCount,
+            historyItemsCount: historyData.next_page_params ? historyData.next_page_params.items_count : 0,
+            historyBonus
         });
 
         // Tính toán airdrop $SOM với công thức mới
         let somEstimate = 0;
 
-        // Balance (k1 = 0.84)
-        somEstimate += balance * 10 * 0.84;
+        // Balance (k1 = 0.81)
+        somEstimate += balance * 10 * 0.81;
 
-        // transactionsCount (k2 = 1.4)
-        somEstimate += transactionsCount * 2 * 1.4;
+        // transactionsCount (k2 = 1.3)
+        somEstimate += transactionsCount * 2 * 1.3;
 
-        // tokenTransfersCount (k3 = 1.4) + bonus 100 nếu > 10
-        somEstimate += tokenTransfersCount * 2 * 1.4;
+        // tokenTransfersCount (k3 = 1.3) + bonus 100 nếu > 10
+        somEstimate += tokenTransfersCount * 2 * 1.3;
         if (tokenTransfersCount > 10) {
             somEstimate += 100;
         }
 
-        // gasUsageCount (k4 = 1.7)
-        somEstimate += gasUsageCount * 10 * 1.7;
+        // gasUsageCount (k4 = 1.85)
+        somEstimate += gasUsageCount * 10 * 1.85;
 
-        // nftCount (k5 = 1.544)
+        // nftCount (k5 = 1.6)
         if (nftCount >= 10) {
-            somEstimate += nftCount * 10 * 1.544;
+            somEstimate += nftCount * 10 * 1.6;
         } else {
             somEstimate += nftCount * 11;
         }
+
+        // Add history bonus
+        somEstimate += historyBonus;
 
         // Fetch last active timestamp
         const transactionsResponse = await axios.get(`${baseUrl}/addresses/${address}/transactions`, {
@@ -112,7 +127,9 @@ module.exports = async (req, res) => {
             gasUsageCount,
             nftCount,
             tokenHoldings,
-            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T07:00:00Z', // UTC time
+            historyItemsCount: historyData.next_page_params ? historyData.next_page_params.items_count : 0,
+            historyBonus,
+            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T07:10:00Z', // UTC time
             somAirdropEstimate: somEstimate
         });
     } catch (error) {
