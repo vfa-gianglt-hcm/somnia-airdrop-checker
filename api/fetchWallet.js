@@ -66,23 +66,23 @@ module.exports = async (req, res) => {
 
         // 1 token $STT = 10 $SOM, nếu > 1 thì nhân đôi
         if (balance > 1) {
-            somEstimate += balance * 2 * 12;
+            somEstimate += balance * 2 * 3;
         } else {
-            somEstimate += balance * 11;
+            somEstimate += balance * 2;
         }
 
         // 1 transactions_count = 20 $SOM, nếu > 1 thì nhân đôi
         if (transactionsCount > 1) {
-            somEstimate += transactionsCount * 2 * 19;
+            somEstimate += transactionsCount * 2 * 1;
         } else {
-            somEstimate += transactionsCount * 19;
+            somEstimate += transactionsCount * 2;
         }
 
         // 1 token_transfers_count = 30 $SOM, nếu > 1 thì nhân đôi
         if (tokenTransfersCount > 1) {
-            somEstimate += tokenTransfersCount * 2 * 31;
+            somEstimate += tokenTransfersCount * 2 * 5;
         } else {
-            somEstimate += tokenTransfersCount * 32;
+            somEstimate += tokenTransfersCount * 3;
         }
 
         // Nếu token_transfers_count > 10, thêm random từ 10 đến 300 $SOM
@@ -93,16 +93,16 @@ module.exports = async (req, res) => {
 
         // 0.1 gas_usage_count = 100 $SOM, nếu > 0.1 thì nhân đôi
         if (gasUsageCount > 0.1) {
-            somEstimate += (gasUsageCount / 0.1) * 2 * 99;
+            somEstimate += (gasUsageCount / 0.1) * 2 * 9;
         } else {
-            somEstimate += (gasUsageCount / 0.1) * 98;
+            somEstimate += (gasUsageCount / 0.1) * 8;
         }
 
         // 1 NFT = 10 $SOM, nếu 10 NFT thì 10 * 100
         if (nftCount >= 10) {
-            somEstimate += nftCount * 98;
+            somEstimate += nftCount * 8;
         } else {
-            somEstimate += nftCount * 12;
+            somEstimate += nftCount * 11;
         }
 
         // // Giới hạn tối đa 10,000 $SOM
