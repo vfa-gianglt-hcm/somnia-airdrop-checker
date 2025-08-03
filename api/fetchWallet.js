@@ -5,7 +5,7 @@ module.exports = async (req, res) => {
 
     // Validate address
     if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
-        return res.status(400).json({ error: 'Địa chỉ ví không hợp lệ' });
+        return res.status(400).json({ error: 'Invalid wallet address' });
     }
 
     try {
@@ -64,23 +64,23 @@ module.exports = async (req, res) => {
         // Tính toán airdrop $SOM theo công thức mới
         let somEstimate = 0;
 
-        // 1 token $STT = 10 $SOM, nếu > 1 thì nhân đôi
+        // 1 token $STT = 10 $SOM, nếu > 1 thì nhân đôi với hệ số 5
         if (balance > 1) {
-            somEstimate += balance * 2 * 3;
+            somEstimate += balance * 2 * 5;
         } else {
-            somEstimate += balance * 2;
+            somEstimate += balance * 0.5;
         }
 
-        // 1 transactions_count = 20 $SOM, nếu > 1 thì nhân đôi
+        // 1 transactions_count = 20 $SOM, nếu > 1 thì nhân đôi với hệ số 2
         if (transactionsCount > 1) {
-            somEstimate += transactionsCount * 2 * 1;
+            somEstimate += transactionsCount * 2 * 2;
         } else {
             somEstimate += transactionsCount * 2;
         }
 
-        // 1 token_transfers_count = 30 $SOM, nếu > 1 thì nhân đôi
+        // 1 token_transfers_count = 30 $SOM, nếu > 1 thì nhân đôi với hệ số 2
         if (tokenTransfersCount > 1) {
-            somEstimate += tokenTransfersCount * 2 * 5;
+            somEstimate += tokenTransfersCount * 2 * 2;
         } else {
             somEstimate += tokenTransfersCount * 3;
         }
@@ -91,22 +91,19 @@ module.exports = async (req, res) => {
             somEstimate += randomBonus;
         }
 
-        // 0.1 gas_usage_count = 100 $SOM, nếu > 0.1 thì nhân đôi
+        // 0.1 gas_usage_count = 100 $SOM, nếu > 0.1 thì nhân đôi với hệ số 2
         if (gasUsageCount > 0.1) {
-            somEstimate += (gasUsageCount / 0.1) * 2 * 9;
+            somEstimate += (gasUsageCount / 0.1) * 2 * 2;
         } else {
-            somEstimate += (gasUsageCount / 0.1) * 8;
+            somEstimate += (gasUsageCount / 0.1) * 1.1;
         }
 
-        // 1 NFT = 10 $SOM, nếu 10 NFT thì 10 * 100
+        // 1 NFT = 10 $SOM, nếu 10 NFT thì 10 * 100 với hệ số 10
         if (nftCount >= 10) {
-            somEstimate += nftCount * 8;
+            somEstimate += nftCount * 10;
         } else {
             somEstimate += nftCount * 11;
         }
-
-        // // Giới hạn tối đa 10,000 $SOM
-        // somEstimate = Math.min(somEstimate, 10000);
 
         // Fetch last active timestamp
         const transactionsResponse = await axios.get(`${baseUrl}/addresses/${address}/transactions`, {
@@ -121,10 +118,10 @@ module.exports = async (req, res) => {
             gasUsageCount,
             nftCount,
             tokenHoldings,
-            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : new Date().toISOString().split('T')[0],
+            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T06:25:00Z', // UTC time
             somAirdropEstimate: somEstimate
         });
     } catch (error) {
-        res.status(500).json({ error: `Lỗi khi lấy dữ liệu: ${error.message}` });
+        res.status(500).json({ error: `Error fetching data: ${error.message}` });
     }
 };
