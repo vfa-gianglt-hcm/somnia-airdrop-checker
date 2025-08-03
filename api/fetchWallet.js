@@ -18,22 +18,25 @@ module.exports = async (req, res) => {
 
         // Fetch total transactions with pagination
         let transactionCount = 0;
-        let page = 1;
-        const limit = 1000; // Adjust based on API limit, if known
+        let pageParams = { block_number: null, index: null, items_count: 50 }; // Start with initial values
 
         while (true) {
             const transactionsResponse = await axios.get(`${baseUrl}/addresses/${address}/transactions`, {
-                params: { page, limit }
+                params: {
+                    block_number: pageParams.block_number,
+                    index: pageParams.index,
+                    items_count: pageParams.items_count
+                }
             });
             const transactionData = transactionsResponse.data;
 
             transactionCount += transactionData.items ? transactionData.items.length : 0;
 
-            // Break if no more items or total is provided in metadata
-            if (!transactionData.items || transactionData.items.length < limit || (transactionData.total && transactionCount >= transactionData.total)) {
+            // Check for next page
+            if (!transactionData.next_page_params || !transactionData.next_page_params.block_number) {
                 break;
             }
-            page++;
+            pageParams = transactionData.next_page_params;
         }
 
         // Fetch token balances
@@ -41,10 +44,10 @@ module.exports = async (req, res) => {
         const tokenData = tokenResponse.data;
 
         // Process data
-        const balance = parseFloat(addressData.coin_balance || '0') / 1e18; // Convert from Wei to STT
+        const balance = parseFloat(addressData.coin_balance || '0') / 1e18; // Convert from Wei to STT (adjust decimals if needed)
         const tokenHoldings = tokenData.map(token => ({
             token: token.token.name || 'Unknown',
-            balance: parseFloat(token.value || '0') / Math.pow(10, parseInt(token.token.decimals || '18')) // Convert based on decimals
+            balance: parseFloat(token.value || '0') / Math.pow(10, parseInt(token.token.decimals || '18')) // Adjust decimals based on token
         }));
 
         res.json({
