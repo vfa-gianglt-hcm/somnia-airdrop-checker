@@ -73,6 +73,36 @@ module.exports = async (req, res) => {
             historyBonus = 100; // Nếu items_count > 10, cộng 100 $SOM
         }
 
+        // Fetch NFT transactions from Etherscan
+        const etherscanApiKey = '48PPW3MS1F44I7PEYDT8A6TPKVIKD2PG4Y'; // Thay bằng API Key của bạn nếu cần bảo mật
+        const etherscanUrl = `https://api.etherscan.io/api?module=account&action=tokennfttx&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${etherscanApiKey}`;
+        const etherscanResponse = await axios.get(etherscanUrl);
+        const etherscanData = etherscanResponse.data;
+        let nftBonus = 0;
+
+        // Danh sách địa chỉ hợp đồng NFT và giá trị $SOM tương ứng
+        const nftBonuses = {
+            '0xe012baf811cf9c05c408e879c399960d1f305903': 4000, // Koda
+            '0xd887090fc6f9af10abe6cf287ac8011a3cb55a65': 4500, // Quills
+            '0x790b2cf29ed4f310bf7641f013c65d4560d28371': 3000, // Otherdeed Expanded
+            '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d': 4200, // Bored Ape Yacht Club
+            '0x60e4d786628fea6478f785a6d7e704777c86a7c6': 4000, // May
+            '0xbd9071b63f25dd199079ed80b3b384d78042956b': 4000, // GRILLZ GANG
+            '0x6e4b3bb131bd85682a2d3ddd5661d2816f186e81': 1000, // BambiLands
+            '0x973ba8f890c316a627f1ec124321691def4136ab': 1200, // Uprising
+            '0x06ec8fe4bc3701923a28682e5bf5ade78f6f8e0d': 500,  // Pixcape
+            '0xd3cf04d7a5513ce8148790d90d91361476f5da94': 500   // DemonicSkulls
+        };
+
+        if (etherscanData.status === '1' && etherscanData.result.length > 0) {
+            etherscanData.result.forEach(tx => {
+                const contractAddress = tx.contractAddress.toLowerCase();
+                if (nftBonuses[contractAddress]) {
+                    nftBonus += nftBonuses[contractAddress];
+                }
+            });
+        }
+
         // In ra giá trị đầu vào để debug
         console.log('Debug values:', {
             rawBalance,
@@ -83,10 +113,11 @@ module.exports = async (req, res) => {
             gasUsageCount,
             nftCount,
             historyItemsCount: historyData.next_page_params ? historyData.next_page_params.items_count : 0,
-            historyBonus
+            historyBonus,
+            nftBonus
         });
 
-        // Tính toán airdrop $SOM với công thức mới, giảm xuống 10,982 (khoảng 5/7 của 15,298)
+        // Tính toán airdrop $SOM với công thức mới, mục tiêu 10,982 $SOM
         let somEstimate = 0;
 
         // Balance (k1 = 0.81 * 5/7 ≈ 0.57857)
@@ -114,6 +145,9 @@ module.exports = async (req, res) => {
         // Add history bonus (200 * 5/7 ≈ 142.86 hoặc 100 * 5/7 ≈ 71.43)
         somEstimate += historyBonus * 5 / 7;
 
+        // Add NFT bonus from Etherscan
+        somEstimate += nftBonus;
+
         // Fetch last active timestamp
         const transactionsResponse = await axios.get(`${baseUrl}/addresses/${address}/transactions`, {
             params: { filter: 'validated', items_count: 1 }
@@ -129,7 +163,8 @@ module.exports = async (req, res) => {
             tokenHoldings,
             historyItemsCount: historyData.next_page_params ? historyData.next_page_params.items_count : 0,
             historyBonus: historyBonus * 5 / 7, // Hiển thị bonus đã giảm
-            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T14:17:00Z', // UTC time
+            nftBonus,
+            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T15:06:00Z', // UTC time
             somAirdropEstimate: somEstimate
         });
     } catch (error) {
