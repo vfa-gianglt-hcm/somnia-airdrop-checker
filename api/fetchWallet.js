@@ -86,33 +86,33 @@ module.exports = async (req, res) => {
             historyBonus
         });
 
-        // Tính toán airdrop $SOM với công thức mới, giảm xuống 1/4 của 15,298 = 3,824.5
+        // Tính toán airdrop $SOM với công thức mới, giảm xuống 10,982 (khoảng 5/7 của 15,298)
         let somEstimate = 0;
 
-        // Balance (k1 = 0.81 / 4 = 0.2025)
-        somEstimate += balance * 10 * 0.2025;
+        // Balance (k1 = 0.81 * 5/7 ≈ 0.57857)
+        somEstimate += balance * 10 * 0.57857;
 
-        // transactionsCount (k2 = 1.3 / 4 = 0.325)
-        somEstimate += transactionsCount * 2 * 0.325;
+        // transactionsCount (k2 = 1.3 * 5/7 ≈ 0.92857)
+        somEstimate += transactionsCount * 2 * 0.92857;
 
-        // tokenTransfersCount (k3 = 1.3 / 4 = 0.325) + bonus 100 / 4 = 25 nếu > 10
-        somEstimate += tokenTransfersCount * 2 * 0.325;
+        // tokenTransfersCount (k3 = 1.3 * 5/7 ≈ 0.92857) + bonus 100 * 5/7 ≈ 71.43 nếu > 10
+        somEstimate += tokenTransfersCount * 2 * 0.92857;
         if (tokenTransfersCount > 10) {
-            somEstimate += 25;
+            somEstimate += 71.43;
         }
 
-        // gasUsageCount (k4 = 1.85 / 4 = 0.4625)
-        somEstimate += gasUsageCount * 10 * 0.4625;
+        // gasUsageCount (k4 = 1.85 * 5/7 ≈ 1.32143)
+        somEstimate += gasUsageCount * 10 * 1.32143;
 
-        // nftCount (k5 = 1.6 / 4 = 0.4)
+        // nftCount (k5 = 1.6 * 5/7 ≈ 1.14286)
         if (nftCount >= 10) {
-            somEstimate += nftCount * 10 * 0.4;
+            somEstimate += nftCount * 10 * 1.14286;
         } else {
-            somEstimate += nftCount * 11 * 0.4 / 1.6; // Điều chỉnh tỷ lệ
+            somEstimate += nftCount * 11 * 1.14286 / 1.6; // Điều chỉnh tỷ lệ
         }
 
-        // Add history bonus (200 / 4 = 50 hoặc 100 / 4 = 25)
-        somEstimate += historyBonus / 4;
+        // Add history bonus (200 * 5/7 ≈ 142.86 hoặc 100 * 5/7 ≈ 71.43)
+        somEstimate += historyBonus * 5 / 7;
 
         // Fetch last active timestamp
         const transactionsResponse = await axios.get(`${baseUrl}/addresses/${address}/transactions`, {
@@ -128,8 +128,8 @@ module.exports = async (req, res) => {
             nftCount,
             tokenHoldings,
             historyItemsCount: historyData.next_page_params ? historyData.next_page_params.items_count : 0,
-            historyBonus: historyBonus / 4, // Hiển thị bonus đã giảm
-            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T14:15:00Z', // UTC time
+            historyBonus: historyBonus * 5 / 7, // Hiển thị bonus đã giảm
+            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T14:17:00Z', // UTC time
             somAirdropEstimate: somEstimate
         });
     } catch (error) {
