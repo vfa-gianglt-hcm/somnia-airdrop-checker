@@ -32,37 +32,44 @@ module.exports = async (req, res) => {
             });
             const transactionData = transactionsResponse.data;
 
+            // Debug: Log dữ liệu từ mỗi trang
+            console.log(`Page data for ${address}:`, transactionData.items ? transactionData.items.length : 0);
+
+            // Cộng dồn số giao dịch từ items
             transactionCount += transactionData.items ? transactionData.items.length : 0;
 
+            // Kiểm tra nếu không còn trang tiếp theo
             if (!transactionData.next_page_params || !transactionData.next_page_params.block_number) {
                 break;
             }
             pageParams = transactionData.next_page_params;
+
+            // Ngăn lặp vô hạn (giới hạn tối đa 100 trang, điều chỉnh nếu cần)
+            if (pageParams.index && pageParams.index > 5000) {
+                console.log('Reached maximum page limit, stopping pagination');
+                break;
+            }
         }
 
-        // Fetch token balances with validation
+        // Fetch token balances
         const tokenResponse = await axios.get(`${baseUrl}/addresses/${address}/token-balances`);
         const tokenData = tokenResponse.data;
-
-        // Debug: Log raw token data to check
-        console.log(`Token data for ${address}:`, tokenData);
 
         const tokenHoldings = tokenData.map(token => {
             const decimals = parseInt(token.token.decimals || '18');
             const balance = parseFloat(token.value || '0') / Math.pow(10, decimals);
             return {
                 token: token.token.name || 'Unknown',
-                balance: isNaN(balance) ? 0 : balance, // Xử lý lỗi nếu balance không hợp lệ
+                balance: isNaN(balance) ? 0 : balance,
                 decimals: decimals
             };
-        }).filter(token => token.balance > 0); // Loại bỏ token có balance = 0
+        }).filter(token => token.balance > 0);
 
         // Phỏng đoán airdrop $SOM
         let somEstimate = 0;
-        const baseAirdrop = 100; // Điểm cơ bản cho ví hoạt động
+        const baseAirdrop = 100;
         somEstimate += baseAirdrop;
 
-        // Thêm điểm dựa trên số giao dịch
         if (transactionCount > 1000) {
             somEstimate += 500;
         } else if (transactionCount > 500) {
@@ -71,7 +78,6 @@ module.exports = async (req, res) => {
             somEstimate += 150;
         }
 
-        // Thêm điểm dựa trên số dư STT
         if (balance > 100) {
             somEstimate += 200;
         } else if (balance > 50) {
@@ -80,10 +86,7 @@ module.exports = async (req, res) => {
             somEstimate += 50;
         }
 
-        // Thêm điểm dựa trên số token sở hữu
         somEstimate += tokenHoldings.length * 50;
-
-        // Giới hạn tối đa 1000 $SOM
         somEstimate = Math.min(somEstimate, 1000);
 
         res.json({
