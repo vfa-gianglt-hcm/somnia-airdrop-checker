@@ -53,6 +53,10 @@
             color: #fff;
             outline: none;
         }
+        input[type="text"]::placeholder {
+            color: #fff;
+            opacity: 1;
+        }
         button {
             padding: 12px 25px;
             background: linear-gradient(90deg, #9370db, #ba55d3);
@@ -72,6 +76,10 @@
             padding: 20px;
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+        #result.show {
+            display: block;
         }
         .congrats {
             color: #ffcc00;
@@ -106,8 +114,15 @@
             color: #ff4500;
             font-size: 1em;
         }
-        .success {
-            color: #32cd32;
+        .not-eligible {
+            color: #ff4500;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+        .disclaimer {
+            font-size: 0.8em;
+            color: #dda0dd;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -116,48 +131,52 @@
         <h1>Somnia Network</h1>
         <div class="sub-title">Eligibility Checker</div>
         <div class="input-group">
-            <input type="text" id="walletAddress" placeholder="Nhập địa chỉ ví (VD: 0xE557933A45D306C55d6111E33131556CCf8823cD)">
+            <input type="text" id="walletAddress" placeholder="0xDA1feA7873338F34C6915A44028aA4D9aBA1346B">
             <button onclick="checkAirdrop()">Kiểm Tra Airdrop</button>
         </div>
-        <div id="result">
-            <div class="congrats">Congrats! 🎉</div>
-            <p>You are eligible for</p>
-            <div class="amount" id="somAmount">0 $SOM</div>
-            <p class="note">Somnia tokens will be distributed soon! ✨</p>
-            <div class="btn-group">
-                <button class="twitter-btn" onclick="followTwitter()">Follow @truonggiangle99</button>
-                <button onclick="checkAnother()">Check Another Address</button>
-            </div>
-        </div>
+        <div id="result"></div>
     </div>
 
     <script>
         async function checkAirdrop() {
             const walletAddress = document.getElementById('walletAddress').value.trim();
             const resultDiv = document.getElementById('result');
-            const somAmount = document.getElementById('somAmount');
 
             if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
                 resultDiv.innerHTML = '<p class="error">Địa chỉ ví không hợp lệ. Vui lòng nhập địa chỉ Ethereum hợp lệ.</p>';
+                resultDiv.classList.remove('show');
                 return;
             }
 
             resultDiv.innerHTML = '<p>Đang lấy dữ liệu...</p>';
+            resultDiv.classList.add('show');
 
             try {
                 const walletData = await fetchWalletData(walletAddress);
-                resultDiv.innerHTML = `
-                    <div class="congrats">Congrats! 🎉</div>
-                    <p>You are eligible for</p>
-                    <div class="amount" id="somAmount">${walletData.somAirdropEstimate.toFixed(2)} $SOM</div>
-                    <p class="note">Somnia tokens will be distributed soon! ✨</p>
-                    <div class="btn-group">
-                        <button class="twitter-btn" onclick="followTwitter()">Follow @truonggiangle99</button>
-                        <button onclick="checkAnother()">Check Another Address</button>
-                    </div>
-                `;
+                if (walletData.somAirdropEstimate > 0) {
+                    resultDiv.innerHTML = `
+                        <div class="congrats">Congrats! 🎉</div>
+                        <p>You are eligible for</p>
+                        <div class="amount">${walletData.somAirdropEstimate.toFixed(2)} $SOM</div>
+                        <p class="note">Somnia tokens will be distributed soon! ✨</p>
+                        <div class="btn-group">
+                            <button class="twitter-btn" onclick="followTwitter()">Follow @truonggiangle99</button>
+                            <button onclick="checkAnother()">Check Another Address</button>
+                        </div>
+                        <p class="disclaimer">Please follow @Somnia_Network for official airdrop updates. We are not responsible for any airdrop amounts you see.</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="not-eligible">You are not eligible. But don’t worry the journey with @Somnia_Network is just getting started. Stay tuned, more chances are coming! 🚀</p>
+                        <p class="disclaimer">Please follow @Somnia_Network for official airdrop updates. We are not responsible for any airdrop amounts you see.</p>
+                        <div class="btn-group">
+                            <button onclick="checkAnother()">Check Another Address</button>
+                        </div>
+                    `;
+                }
             } catch (error) {
                 resultDiv.innerHTML = `<p class="error">Lỗi khi lấy dữ liệu: ${error.message}</p>`;
+                resultDiv.classList.add('show');
             }
         }
 
@@ -170,6 +189,7 @@
                 return data;
             } catch (error) {
                 console.error('API error:', error);
+                // Mock data with current UTC time (12:27 PM +07 = 05:27 UTC)
                 return {
                     balance: 10.5,
                     transactionsCount: 25,
@@ -177,14 +197,15 @@
                     gasUsageCount: 0.2,
                     nftCount: 3,
                     tokenHoldings: [{ token: "TokenA", balance: 100 }],
-                    lastActive: new Date().toISOString(), // UTC time
-                    somAirdropEstimate: 350
+                    lastActive: '2025-08-03T05:27:00Z', // UTC time
+                    somAirdropEstimate: 350 // > 0 to show Congrats
                 };
             }
         }
 
         function checkAnother() {
             document.getElementById('walletAddress').value = '';
+            document.getElementById('result').classList.remove('show');
             document.getElementById('result').innerHTML = '';
         }
 
