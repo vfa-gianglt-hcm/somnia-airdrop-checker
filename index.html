@@ -89,17 +89,18 @@
             try {
                 // Fetch real data from serverless API
                 const walletData = await fetchWalletData(walletAddress);
-                
-                // Estimate airdrop based on data
-                const airdropEstimate = estimateAirdrop(walletData);
 
                 // Display results
                 resultDiv.innerHTML = `
                     <h3>Phân tích ví ${walletAddress}</h3>
                     <p><strong>Số dư:</strong> ${walletData.balance.toFixed(4)} STT</p>
-                    <p><strong>Giao dịch:</strong> ${walletData.transactionCount}</p>
+                    <p><strong>Số giao dịch:</strong> ${walletData.transactionsCount}</p>
+                    <p><strong>Số chuyển token:</strong> ${walletData.tokenTransfersCount}</p>
+                    <p><strong>Gas sử dụng:</strong> ${walletData.gasUsageCount}</p>
+                    <p><strong>Số NFT sở hữu:</strong> ${walletData.nftCount}</p>
                     <p><strong>Token sở hữu:</strong> ${walletData.tokenHoldings.length} token</p>
-                    <p class="success"><strong>Ước lượng airdrop $SOM:</strong> ${airdropEstimate} $SOM (ước lượng sơ bộ)</p>
+                    <p><strong>Lần hoạt động cuối:</strong> ${walletData.lastActive}</p>
+                    <p class="success"><strong>Ước lượng airdrop $SOM:</strong> ${walletData.somAirdropEstimate.toFixed(2)} $SOM (ước lượng sơ bộ)</p>
                     <p><small>Lưu ý: Đây là ước lượng phỏng đoán dựa trên hoạt động ví và tiêu chí airdrop thông thường.</small></p>
                 `;
             } catch (error) {
@@ -120,32 +121,18 @@
                 console.error('API error:', error);
                 return {
                     balance: 10.5,
-                    transactionCount: 25,
+                    transactionsCount: 25,
+                    tokenTransfersCount: 5,
+                    gasUsageCount: 0.2,
+                    nftCount: 3,
                     tokenHoldings: [
                         { token: "TokenA", balance: 100 },
                         { token: "TokenB", balance: 50 }
                     ],
-                    lastActive: "2025-07-15"
+                    lastActive: "2025-07-15",
+                    somAirdropEstimate: 350
                 };
             }
-        }
-
-        function estimateAirdrop(walletData) {
-            let baseAirdrop = 100; // Base airdrop for active wallets
-            if (walletData.transactionCount > 50) {
-                baseAirdrop += 500;
-            } else if (walletData.transactionCount > 20) {
-                baseAirdrop += 300;
-            } else if (walletData.transactionCount > 5) {
-                baseAirdrop += 100;
-            }
-            if (walletData.balance > 50) {
-                baseAirdrop += 200;
-            } else if (walletData.balance > 10) {
-                baseAirdrop += 100;
-            }
-            baseAirdrop += walletData.tokenHoldings.length * 50;
-            return Math.min(baseAirdrop, 1000); // Cap at 1000 $SOM
         }
     </script>
 </body>
