@@ -26,27 +26,36 @@ module.exports = async (req, res) => {
                 params: {
                     block_number: pageParams.block_number,
                     index: pageParams.index,
-                    items_count: pageParams.items_count
+                    items_count: pageParams.items_count,
+                    filter: 'validated' // Chỉ lấy giao dịch đã xác nhận
                 }
             });
             const transactionData = transactionsResponse.data;
 
             transactionCount += transactionData.items ? transactionData.items.length : 0;
 
-            // Kiểm tra nếu không còn trang tiếp theo
             if (!transactionData.next_page_params || !transactionData.next_page_params.block_number) {
                 break;
             }
             pageParams = transactionData.next_page_params;
         }
 
-        // Fetch token balances
+        // Fetch token balances with validation
         const tokenResponse = await axios.get(`${baseUrl}/addresses/${address}/token-balances`);
         const tokenData = tokenResponse.data;
-        const tokenHoldings = tokenData.map(token => ({
-            token: token.token.name || 'Unknown',
-            balance: parseFloat(token.value || '0') / Math.pow(10, parseInt(token.token.decimals || '18'))
-        }));
+
+        // Debug: Log raw token data to check
+        console.log(`Token data for ${address}:`, tokenData);
+
+        const tokenHoldings = tokenData.map(token => {
+            const decimals = parseInt(token.token.decimals || '18');
+            const balance = parseFloat(token.value || '0') / Math.pow(10, decimals);
+            return {
+                token: token.token.name || 'Unknown',
+                balance: isNaN(balance) ? 0 : balance, // Xử lý lỗi nếu balance không hợp lệ
+                decimals: decimals
+            };
+        }).filter(token => token.balance > 0); // Loại bỏ token có balance = 0
 
         // Phỏng đoán airdrop $SOM
         let somEstimate = 0;
@@ -55,7 +64,7 @@ module.exports = async (req, res) => {
 
         // Thêm điểm dựa trên số giao dịch
         if (transactionCount > 1000) {
-            somEstimate += 500; // Hoạt động cao
+            somEstimate += 500;
         } else if (transactionCount > 500) {
             somEstimate += 300;
         } else if (transactionCount > 100) {
@@ -82,7 +91,7 @@ module.exports = async (req, res) => {
             transactionCount,
             tokenHoldings,
             lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : new Date().toISOString().split('T')[0],
-            somAirdropEstimate: somEstimate // Ước lượng airdrop $SOM
+            somAirdropEstimate: somEstimate
         });
     } catch (error) {
         res.status(500).json({ error: `Lỗi khi lấy dữ liệu: ${error.message}` });
