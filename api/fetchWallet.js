@@ -61,46 +61,27 @@ module.exports = async (req, res) => {
             };
         }).filter(token => token.balance > 0);
 
-        // Tính toán airdrop $SOM theo công thức mới
+        // Tính toán airdrop $SOM với công thức mới
         let somEstimate = 0;
 
-        // 1 token $STT = 10 $SOM, nếu > 1 thì nhân đôi với hệ số 5
-        if (balance > 1) {
-            somEstimate += balance * 2 * 5;
-        } else {
-            somEstimate += balance * 0.5;
-        }
+        // Balance (k1 = 0.84)
+        somEstimate += balance * 10 * 0.84;
 
-        // 1 transactions_count = 20 $SOM, nếu > 1 thì nhân đôi với hệ số 2
-        if (transactionsCount > 1) {
-            somEstimate += transactionsCount * 2 * 2;
-        } else {
-            somEstimate += transactionsCount * 2;
-        }
+        // transactionsCount (k2 = 1.4)
+        somEstimate += transactionsCount * 2 * 1.4;
 
-        // 1 token_transfers_count = 30 $SOM, nếu > 1 thì nhân đôi với hệ số 2
-        if (tokenTransfersCount > 1) {
-            somEstimate += tokenTransfersCount * 2 * 2;
-        } else {
-            somEstimate += tokenTransfersCount * 3;
-        }
-
-        // Nếu token_transfers_count > 10, thêm random từ 10 đến 300 $SOM
+        // tokenTransfersCount (k3 = 1.4) + bonus 100 nếu > 10
+        somEstimate += tokenTransfersCount * 2 * 1.4;
         if (tokenTransfersCount > 10) {
-            const randomBonus = Math.floor(Math.random() * (300 - 10 + 1)) + 10;
-            somEstimate += randomBonus;
+            somEstimate += 100;
         }
 
-        // 0.1 gas_usage_count = 100 $SOM, nếu > 0.1 thì nhân đôi với hệ số 2
-        if (gasUsageCount > 0.1) {
-            somEstimate += (gasUsageCount / 0.1) * 2 * 2;
-        } else {
-            somEstimate += (gasUsageCount / 0.1) * 1.1;
-        }
+        // gasUsageCount (k4 = 1.7)
+        somEstimate += gasUsageCount * 10 * 1.7;
 
-        // 1 NFT = 10 $SOM, nếu 10 NFT thì 10 * 100 với hệ số 10
+        // nftCount (k5 = 1.544)
         if (nftCount >= 10) {
-            somEstimate += nftCount * 10;
+            somEstimate += nftCount * 10 * 1.544;
         } else {
             somEstimate += nftCount * 11;
         }
@@ -118,7 +99,7 @@ module.exports = async (req, res) => {
             gasUsageCount,
             nftCount,
             tokenHoldings,
-            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T06:25:00Z', // UTC time
+            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T06:39:00Z', // UTC time
             somAirdropEstimate: somEstimate
         });
     } catch (error) {
