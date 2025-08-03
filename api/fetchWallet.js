@@ -15,10 +15,11 @@ module.exports = async (req, res) => {
         // Fetch address overview (balance)
         const addressResponse = await axios.get(`${baseUrl}/addresses/${address}`);
         const addressData = addressResponse.data;
+        const balance = parseFloat(addressData.coin_balance || '0') / 1e18; // Giả định STT dùng 18 decimals
 
         // Fetch total transactions with pagination
         let transactionCount = 0;
-        let pageParams = { block_number: null, index: null, items_count: 50 }; // Start with initial values
+        let pageParams = { block_number: null, index: null, items_count: 50 }; // Mặc định 50 items/trang
 
         while (true) {
             const transactionsResponse = await axios.get(`${baseUrl}/addresses/${address}/transactions`, {
@@ -32,7 +33,7 @@ module.exports = async (req, res) => {
 
             transactionCount += transactionData.items ? transactionData.items.length : 0;
 
-            // Check for next page
+            // Kiểm tra nếu không còn trang tiếp theo
             if (!transactionData.next_page_params || !transactionData.next_page_params.block_number) {
                 break;
             }
@@ -42,19 +43,46 @@ module.exports = async (req, res) => {
         // Fetch token balances
         const tokenResponse = await axios.get(`${baseUrl}/addresses/${address}/token-balances`);
         const tokenData = tokenResponse.data;
-
-        // Process data
-        const balance = parseFloat(addressData.coin_balance || '0') / 1e18; // Convert from Wei to STT (adjust decimals if needed)
         const tokenHoldings = tokenData.map(token => ({
             token: token.token.name || 'Unknown',
-            balance: parseFloat(token.value || '0') / Math.pow(10, parseInt(token.token.decimals || '18')) // Adjust decimals based on token
+            balance: parseFloat(token.value || '0') / Math.pow(10, parseInt(token.token.decimals || '18'))
         }));
+
+        // Phỏng đoán airdrop $SOM
+        let somEstimate = 0;
+        const baseAirdrop = 100; // Điểm cơ bản cho ví hoạt động
+        somEstimate += baseAirdrop;
+
+        // Thêm điểm dựa trên số giao dịch
+        if (transactionCount > 1000) {
+            somEstimate += 500; // Hoạt động cao
+        } else if (transactionCount > 500) {
+            somEstimate += 300;
+        } else if (transactionCount > 100) {
+            somEstimate += 150;
+        }
+
+        // Thêm điểm dựa trên số dư STT
+        if (balance > 100) {
+            somEstimate += 200;
+        } else if (balance > 50) {
+            somEstimate += 100;
+        } else if (balance > 10) {
+            somEstimate += 50;
+        }
+
+        // Thêm điểm dựa trên số token sở hữu
+        somEstimate += tokenHoldings.length * 50;
+
+        // Giới hạn tối đa 1000 $SOM
+        somEstimate = Math.min(somEstimate, 1000);
 
         res.json({
             balance,
             transactionCount,
             tokenHoldings,
-            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : new Date().toISOString().split('T')[0]
+            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : new Date().toISOString().split('T')[0],
+            somAirdropEstimate: somEstimate // Ước lượng airdrop $SOM
         });
     } catch (error) {
         res.status(500).json({ error: `Lỗi khi lấy dữ liệu: ${error.message}` });
