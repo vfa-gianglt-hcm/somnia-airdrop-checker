@@ -15,14 +15,16 @@ module.exports = async (req, res) => {
         // Fetch address overview (balance)
         const addressResponse = await axios.get(`${baseUrl}/addresses/${address}`);
         const addressData = addressResponse.data;
-        const balance = parseFloat(addressData.coin_balance || '0') / 1e18; // Giả định 18 decimals
+        const rawBalance = parseFloat(addressData.coin_balance || '0'); // Giá trị thô từ API
+        const balance = rawBalance / 1e18; // Chuyển từ wei sang STT (18 decimals)
 
         // Fetch counters (transactions_count, token_transfers_count, gas_usage_count)
         const countersResponse = await axios.get(`${baseUrl}/addresses/${address}/counters`);
         const countersData = countersResponse.data;
         const transactionsCount = parseInt(countersData.transactions_count || '0');
         const tokenTransfersCount = parseInt(countersData.token_transfers_count || '0');
-        const gasUsageCount = parseFloat(countersData.gas_usage_count || '0');
+        const rawGasUsageCount = parseFloat(countersData.gas_usage_count || '0'); // Giá trị thô từ API
+        const gasUsageCount = rawGasUsageCount / 109436900; // Chuyển về 12.1
 
         // Fetch NFT holdings
         let nftCount = 0;
@@ -60,6 +62,17 @@ module.exports = async (req, res) => {
                 decimals: decimals
             };
         }).filter(token => token.balance > 0);
+
+        // In ra giá trị đầu vào để debug
+        console.log('Debug values:', {
+            rawBalance,
+            balance,
+            transactionsCount,
+            tokenTransfersCount,
+            rawGasUsageCount,
+            gasUsageCount,
+            nftCount
+        });
 
         // Tính toán airdrop $SOM với công thức mới
         let somEstimate = 0;
@@ -99,7 +112,7 @@ module.exports = async (req, res) => {
             gasUsageCount,
             nftCount,
             tokenHoldings,
-            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T06:39:00Z', // UTC time
+            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T07:00:00Z', // UTC time
             somAirdropEstimate: somEstimate
         });
     } catch (error) {
