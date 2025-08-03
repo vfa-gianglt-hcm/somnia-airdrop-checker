@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiểm Tra Airdrop Somnia</title>
+    <title>Somnia Airdrop Checker</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -54,7 +54,7 @@
             outline: none;
         }
         input[type="text"]::placeholder {
-            color: #fff;
+            color: #b0b0b0; /* Màu xám */
             opacity: 1;
         }
         button {
@@ -132,7 +132,7 @@
         <div class="sub-title">Eligibility Checker</div>
         <div class="input-group">
             <input type="text" id="walletAddress" placeholder="0xDA1feA7873338F34C6915A44028aA4D9aBA1346B">
-            <button onclick="checkAirdrop()">Kiểm Tra Airdrop</button>
+            <button onclick="checkAirdrop()">Check Airdrop</button>
         </div>
         <div id="result"></div>
     </div>
@@ -142,13 +142,19 @@
             const walletAddress = document.getElementById('walletAddress').value.trim();
             const resultDiv = document.getElementById('result');
 
-            if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-                resultDiv.innerHTML = '<p class="error">Địa chỉ ví không hợp lệ. Vui lòng nhập địa chỉ Ethereum hợp lệ.</p>';
-                resultDiv.classList.remove('show');
+            if (!walletAddress) {
+                resultDiv.innerHTML = '<p class="error">Please enter a wallet address.</p>';
+                resultDiv.classList.add('show');
                 return;
             }
 
-            resultDiv.innerHTML = '<p>Đang lấy dữ liệu...</p>';
+            if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+                resultDiv.innerHTML = '<p class="error">Invalid wallet address. Please enter a valid Ethereum address.</p>';
+                resultDiv.classList.add('show');
+                return;
+            }
+
+            resultDiv.innerHTML = '<p>Fetching data...</p>';
             resultDiv.classList.add('show');
 
             try {
@@ -157,9 +163,10 @@
                     resultDiv.innerHTML = `
                         <div class="congrats">Congrats! 🎉</div>
                         <p>You are eligible for</p>
-                        <div class="amount">${walletData.somAirdropEstimate.toFixed(2)} $SOM</div>
+                        <div class="amount">${walletData.somAirdropEstimate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $SOM</div>
                         <p class="note">Somnia tokens will be distributed soon! ✨</p>
                         <div class="btn-group">
+                            <button class="twitter-btn" onclick="shareTwitter()">Share on Twitter</button>
                             <button class="twitter-btn" onclick="followTwitter()">Follow @truonggiangle99</button>
                             <button onclick="checkAnother()">Check Another Address</button>
                         </div>
@@ -175,7 +182,7 @@
                     `;
                 }
             } catch (error) {
-                resultDiv.innerHTML = `<p class="error">Lỗi khi lấy dữ liệu: ${error.message}</p>`;
+                resultDiv.innerHTML = `<p class="error">Error fetching data: ${error.message}</p>`;
                 resultDiv.classList.add('show');
             }
         }
@@ -183,13 +190,13 @@
         async function fetchWalletData(address) {
             try {
                 const response = await fetch(`/api/fetchWallet?address=${encodeURIComponent(address)}`);
-                if (!response.ok) throw new Error('Không thể lấy dữ liệu từ API');
+                if (!response.ok) throw new Error('Cannot fetch data from API');
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
                 return data;
             } catch (error) {
                 console.error('API error:', error);
-                // Mock data with current UTC time (12:27 PM +07 = 05:27 UTC)
+                // Mock data with current UTC time (12:43 PM +07 = 05:43 UTC)
                 return {
                     balance: 10.5,
                     transactionsCount: 25,
@@ -197,7 +204,7 @@
                     gasUsageCount: 0.2,
                     nftCount: 3,
                     tokenHoldings: [{ token: "TokenA", balance: 100 }],
-                    lastActive: '2025-08-03T05:27:00Z', // UTC time
+                    lastActive: '2025-08-03T05:43:00Z', // UTC time
                     somAirdropEstimate: 350 // > 0 to show Congrats
                 };
             }
@@ -211,6 +218,11 @@
 
         function followTwitter() {
             window.open('https://twitter.com/truonggiangle99', '_blank');
+        }
+
+        function shareTwitter() {
+            const tweetText = encodeURIComponent("🌟 Somnia Airdrop Checker is live!\nAre you eligible for the @Somnia_Network airdrop? 🔍\nCheck now: https://somnia-airdrop-checker.vercel.app/\nJust enter your wallet address… and maybe start picking your dream supercar.");
+            window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
         }
     </script>
 </body>
