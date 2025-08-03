@@ -86,33 +86,33 @@ module.exports = async (req, res) => {
             historyBonus
         });
 
-        // Tính toán airdrop $SOM với công thức mới
+        // Tính toán airdrop $SOM với công thức mới, giảm xuống 1/4 của 15,298 = 3,824.5
         let somEstimate = 0;
 
-        // Balance (k1 = 0.81)
-        somEstimate += balance * 10 * 0.81;
+        // Balance (k1 = 0.81 / 4 = 0.2025)
+        somEstimate += balance * 10 * 0.2025;
 
-        // transactionsCount (k2 = 1.3)
-        somEstimate += transactionsCount * 2 * 1.3;
+        // transactionsCount (k2 = 1.3 / 4 = 0.325)
+        somEstimate += transactionsCount * 2 * 0.325;
 
-        // tokenTransfersCount (k3 = 1.3) + bonus 100 nếu > 10
-        somEstimate += tokenTransfersCount * 2 * 1.3;
+        // tokenTransfersCount (k3 = 1.3 / 4 = 0.325) + bonus 100 / 4 = 25 nếu > 10
+        somEstimate += tokenTransfersCount * 2 * 0.325;
         if (tokenTransfersCount > 10) {
-            somEstimate += 100;
+            somEstimate += 25;
         }
 
-        // gasUsageCount (k4 = 1.85)
-        somEstimate += gasUsageCount * 10 * 1.85;
+        // gasUsageCount (k4 = 1.85 / 4 = 0.4625)
+        somEstimate += gasUsageCount * 10 * 0.4625;
 
-        // nftCount (k5 = 1.6)
+        // nftCount (k5 = 1.6 / 4 = 0.4)
         if (nftCount >= 10) {
-            somEstimate += nftCount * 10 * 1.6;
+            somEstimate += nftCount * 10 * 0.4;
         } else {
-            somEstimate += nftCount * 11;
+            somEstimate += nftCount * 11 * 0.4 / 1.6; // Điều chỉnh tỷ lệ
         }
 
-        // Add history bonus
-        somEstimate += historyBonus;
+        // Add history bonus (200 / 4 = 50 hoặc 100 / 4 = 25)
+        somEstimate += historyBonus / 4;
 
         // Fetch last active timestamp
         const transactionsResponse = await axios.get(`${baseUrl}/addresses/${address}/transactions`, {
@@ -128,8 +128,8 @@ module.exports = async (req, res) => {
             nftCount,
             tokenHoldings,
             historyItemsCount: historyData.next_page_params ? historyData.next_page_params.items_count : 0,
-            historyBonus,
-            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T07:10:00Z', // UTC time
+            historyBonus: historyBonus / 4, // Hiển thị bonus đã giảm
+            lastActive: transactionData.items && transactionData.items.length > 0 ? transactionData.items[0].timestamp : '2025-08-03T14:15:00Z', // UTC time
             somAirdropEstimate: somEstimate
         });
     } catch (error) {
