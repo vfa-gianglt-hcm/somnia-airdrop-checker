@@ -72,10 +72,6 @@
             padding: 20px;
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.1);
-            display: none;
-        }
-        #result.show {
-            display: block;
         }
         .congrats {
             color: #ffcc00;
@@ -143,17 +139,23 @@
 
             if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
                 resultDiv.innerHTML = '<p class="error">Địa chỉ ví không hợp lệ. Vui lòng nhập địa chỉ Ethereum hợp lệ.</p>';
-                resultDiv.classList.remove('show');
                 return;
             }
 
             resultDiv.innerHTML = '<p>Đang lấy dữ liệu...</p>';
-            resultDiv.classList.add('show');
 
             try {
                 const walletData = await fetchWalletData(walletAddress);
-                somAmount.textContent = `${walletData.somAirdropEstimate.toFixed(2)} $SOM`;
-                resultDiv.classList.add('show');
+                resultDiv.innerHTML = `
+                    <div class="congrats">Congrats! 🎉</div>
+                    <p>You are eligible for</p>
+                    <div class="amount" id="somAmount">${walletData.somAirdropEstimate.toFixed(2)} $SOM</div>
+                    <p class="note">Somnia tokens will be distributed soon! ✨</p>
+                    <div class="btn-group">
+                        <button class="twitter-btn" onclick="followTwitter()">Follow @truonggiangle99</button>
+                        <button onclick="checkAnother()">Check Another Address</button>
+                    </div>
+                `;
             } catch (error) {
                 resultDiv.innerHTML = `<p class="error">Lỗi khi lấy dữ liệu: ${error.message}</p>`;
             }
@@ -175,7 +177,7 @@
                     gasUsageCount: 0.2,
                     nftCount: 3,
                     tokenHoldings: [{ token: "TokenA", balance: 100 }],
-                    lastActive: new Date().toISOString().split('T')[0] + 'T12:05:00Z', // UTC time
+                    lastActive: new Date().toISOString(), // UTC time
                     somAirdropEstimate: 350
                 };
             }
@@ -183,7 +185,7 @@
 
         function checkAnother() {
             document.getElementById('walletAddress').value = '';
-            document.getElementById('result').classList.remove('show');
+            document.getElementById('result').innerHTML = '';
         }
 
         function followTwitter() {
