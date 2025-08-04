@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -130,6 +130,243 @@
     <div class="container">
         <h1>Somnia Network</h1>
         <div class="sub-title">Eligibility Checker</div>
+        <div class="input-group">
+            <input type="text" id="walletAddress" placeholder="0xDA1feA7873338F34C6915A44028aA4D9aBA1346B">
+            <button onclick="checkAirdrop()">Check Airdrop</button>
+        </div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function checkAirdrop() {
+            const walletAddress = document.getElementById('walletAddress').value.trim();
+            const resultDiv = document.getElementById('result');
+
+            if (!walletAddress) {
+                resultDiv.innerHTML = '<p class="error">Please enter a wallet address.</p>';
+                resultDiv.classList.add('show');
+                return;
+            }
+
+            if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+                resultDiv.innerHTML = '<p class="error">Invalid wallet address. Please enter a valid Ethereum address.</p>';
+                resultDiv.classList.add('show');
+                return;
+            }
+
+            resultDiv.innerHTML = '<p>Fetching data...</p>';
+            resultDiv.classList.add('show');
+
+            try {
+                const walletData = await fetchWalletData(walletAddress);
+                if (walletData.somAirdropEstimate > 0) {
+                    resultDiv.innerHTML = `
+                        <div class="congrats">Congrats! 🎉</div>
+                        <p>You are eligible for</p>
+                        <div class="amount">${walletData.somAirdropEstimate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $SOM</div>
+                        <p class="note">Somnia tokens will be distributed soon! ✨</p>
+                        <div class="btn-group">
+                            <button class="twitter-btn" onclick="shareTwitter()">Share on Twitter</button>
+                            <button class="twitter-btn" onclick="followOnX()">Follow on X for updates</button>
+                            <button onclick="checkAnother()">Check Another Address</button>
+                        </div>
+                        <p class="disclaimer">Please follow @Somnia_Network for official airdrop updates. We are not responsible for any airdrop amounts you see.</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="not-eligible">You are not eligible. But don’t worry the journey with @Somnia_Network is just getting started. Stay tuned, more chances are coming! 🚀</p>
+                        <p class="disclaimer">Please follow @Somnia_Network for official airdrop updates. We are not responsible for any airdrop amounts you see.</p>
+                        <div class="btn-group">
+                            <button onclick="checkAnother()">Check Another Address</button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">Error fetching data: ${error.message}</p>`;
+                resultDiv.classList.add('show');
+            }
+        }
+
+        async function fetchWalletData(address) {
+            try {
+                const response = await fetch(`/api/fetchWallet?address=${encodeURIComponent(address)}`);
+                if (!response.ok) throw new Error('Cannot fetch data from API');
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                return data;
+            } catch (error) {
+                console.error('API error:', error);
+                // Mock data with current UTC time (12:52 PM +07 = 05:52 UTC)
+                return {
+                    balance: 10.5,
+                    transactionsCount: 25,
+                    tokenTransfersCount: 5,
+                    gasUsageCount: 0.2,
+                    nftCount: 3,
+                    tokenHoldings: [{ token: "TokenA", balance: 100 }],
+                    lastActive: '2025-08-03T05:52:00Z', // UTC time
+                    somAirdropEstimate: 350 // > 0 to show Congrats
+                };
+            }
+        }
+
+        function checkAnother() {
+            document.getElementById('walletAddress').value = '';
+            document.getElementById('result').classList.remove('show');
+            document.getElementById('result').innerHTML = '';
+        }
+
+        function followOnX() {
+            window.open('https://twitter.com/intent/follow?screen_name=Somnia_Network', '_blank');
+        }
+
+        function shareTwitter() {
+            const tweetText = encodeURIComponent("🌟 Somnia Airdrop Checker is live!\nAre you eligible for the @Somnia_Network airdrop? 🔍\nCheck now: https://somnia-airdrop-checker.vercel.app/\nJust enter your wallet address… and maybe start picking your dream supercar.");
+            window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
+        }
+    </script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Somnia Airdrop Checker</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(135deg, #4b0082, #8a2be2);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            margin-top: 50px;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #ffcc00;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .sub-title {
+            font-size: 1.2em;
+            color: #dda0dd;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            outline: none;
+        }
+        input[type="text"]::placeholder {
+            color: #b0b0b0; /* Màu xám */
+            opacity: 1;
+        }
+        button {
+            padding: 12px 25px;
+            background: linear-gradient(90deg, #9370db, #ba55d3);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+            background: linear-gradient(90deg, #8a2be2, #9370db);
+        }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+        #result.show {
+            display: block;
+        }
+        .congrats {
+            color: #ffcc00;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .amount {
+            font-size: 2em;
+            color: #fff;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .note {
+            font-size: 0.9em;
+            color: #dda0dd;
+            margin-top: 10px;
+        }
+        .btn-group {
+            margin-top: 20px;
+        }
+        .btn-group button {
+            margin: 0 5px;
+            padding: 10px 20px;
+        }
+        .twitter-btn {
+            background: #1da1f2;
+        }
+        .twitter-btn:hover {
+            background: #0d8bd7;
+        }
+        .error {
+            color: #ff4500;
+            font-size: 1em;
+        }
+        .not-eligible {
+            color: #ff4500;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+        .disclaimer {
+            font-size: 0.8em;
+            color: #dda0dd;
+            margin-top: 10px;
+        }
+        .api-closed {
+            font-size: 1em;
+            color: #ff4500;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Somnia Network</h1>
+        <div class="sub-title">Eligibility Checker</div>
+        <div class="api-closed">API closed. Please follow @Somnia_Network for more TGE information.</div>
         <div class="input-group">
             <input type="text" id="walletAddress" placeholder="0xDA1feA7873338F34C6915A44028aA4D9aBA1346B">
             <button onclick="checkAirdrop()">Check Airdrop</button>
